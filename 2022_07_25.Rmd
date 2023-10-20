@@ -1,0 +1,63 @@
+---
+title: "Predicting performance shift under Domain shift"
+output: html_document
+date: '2022-07-25'
+---
+
+```{r setup, include=FALSE}
+#libraries
+cat("Libraries loading...\n")
+source("libraries.R")
+
+#functions
+cat("Functions loading...\n")
+source("functions.R")
+
+```
+
+
+```{r cars}
+# Dataset initialisation
+Dataset<-initialise_dataset("Gradual_W10K")
+
+# Train regression models
+training <-compute_performance_shifts(Dataset, "training")
+training<-append_drift_detection_metrics(Dataset, "training", training)
+
+training$DE_shift<-c(0, diff(training$discrimination_error))
+training$APS_shift<-c(0, diff(training$avr_prob_score))
+```
+
+
+```{r}
+# Plot regression models 
+drift_metrics<-c("discrimination_error", "avr_prob_score")
+for(metric in drift_metrics){
+  plot_regression_model(training, metric)
+}
+
+```
+
+
+```{r}
+## Evaluate algorithm
+test<-compute_performance_shifts(Dataset, "test")
+test<-append_drift_detection_metrics(Dataset, "test", test)
+
+test$perf_shift_pred_baseline<-compute_mean_performance_shift(training)
+test <-append_performance_shifts_pred(training, test, drift_metrics)
+
+# Plot results
+plot_drift_detection(training, drift_metrics, "metrics")
+plot_drift_detection(test, drift_metrics, "metrics")
+plot_drift_detection(test, drift_metrics, "drop_prediction")
+```
+
+```{r}
+## Compute errors
+errors<-compute_errors(test, drift_metrics)
+print_output(errors)
+```
+
+
+
