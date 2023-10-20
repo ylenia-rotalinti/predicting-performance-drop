@@ -1,1 +1,1 @@
-/Data/prova.txt
+Data/prova.txt
