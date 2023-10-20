@@ -336,8 +336,15 @@ compute_discrimination_error<-function(source, target, class_column_label){
   source[[class_column_label]]<-as.factor(1)
   target[[class_column_label]]<-as.factor(0)
   
-  source<-sample_n(source, nrow(target)) #to balance the data
-  union<-union_all(source,target) 
+  #data sets balancing (both with the same amount of data)
+  if(nrow(source) > nrow(target)){
+    source<-sample_n(source, nrow(target))
+  } else {
+    target<-sample_n(target, nrow(source))
+  }
+  
+   #to balance the data ans shuffle the order of the rows
+  union<-union_all(source,target) %>% sample_n(n(), replace = FALSE)
   
   training<-sample_frac(union, 0.7)
   test<-setdiff(union,training)
