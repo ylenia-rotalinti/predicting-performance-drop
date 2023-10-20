@@ -1,7 +1,8 @@
 ---
 title: "Predicting performance shift under Domain shift"
 output: html_document
-date: '2022-07-25'
+date creation: '2022-07-25'
+date modification: '2023-10-20'
 ---
 
 ```{r setup, include=FALSE}
@@ -18,7 +19,8 @@ source("functions.R")
 
 ```{r cars}
 # Dataset initialisation
-Dataset<-initialise_dataset("Gradual_W10K")
+# Dataset<-initialise_dataset("Gradual_W10K")
+ Dataset<-initialise_dataset("COVID-SYN")
 
 # Train regression models
 training <-compute_performance_shifts(Dataset, "training")

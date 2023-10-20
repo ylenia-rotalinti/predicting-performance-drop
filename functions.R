@@ -5,7 +5,7 @@
 #########
 parse_COVID_data <- function(origin) {
   switch (origin,
-          "SYNTHETIC" = {
+          "SYN" = {
             path <-
               "Data/2021-04-14_Synthetic_Of_2021-04-14_GTNegAndPositives.csv"
           },
@@ -30,7 +30,7 @@ parse_COVID_data <- function(origin) {
   
   #select meaningful columns
   switch(origin,
-         "SYNTHETIC" = {
+         "SYN" = {
            df <- df %>%
              select(-X,-patid,-age,-DeathDate,-Tamiflu_rx) %>%
              filter(covid_dt <= as.Date('2021-04-30'))
@@ -140,9 +140,10 @@ parse_synthetic_data <- function(dataset_label) {
   return(df)
 }
 
-parse_data <- function(dataset_label, origin=NULL){
+parse_data <- function(dataset_label){
   switch (dataset_label,
-          "COVID" = {df <- parse_COVID_data(origin)},
+          "COVID-SYN" = {df <- parse_COVID_data("SYN")},
+          "COVID-REAL" = {df <- parse_COVID_data("REAL")},
           "CVD" = {df <- parse_CVD_data()},
           {
             df<-parse_synthetic_data(dataset_label) #abrupt or gradual
@@ -151,7 +152,7 @@ parse_data <- function(dataset_label, origin=NULL){
   return(df)
 }
 set_parameters<-function(dataset_label){
-  if(dataset_label=="COVID"){
+  if(dataset_label %in% c("COVID-SYN", "COVID-REAL")){
       granularity <- "month"          #batch window (day/month/year)
       date_format <- "%Y/%m"           #format of the time column (%Y , %Y-%m)
       date_column_label <- "covid_dt"   #meaningful columns
@@ -193,8 +194,8 @@ data_to_batches <-function(dataset_obj){
   for(i in (dataset_obj$batches_to_group+1):length(raw_batches)){
     batches<-append(batches, list(list(batch_id=length(batches)+1, 
                                        batch_name=names(raw_batches)[i],
-                                       date_start=ifelse(dataset_obj$is_time_series, get_first_day(names(raw_batches)[i]), ((i-1)*dataset_obj$granularity)+1), 
-                                       date_end=ifelse(dataset_obj$is_time_series, get_last_day(names(raw_batches)[i]), i*dataset_obj$granularity), 
+                                       date_start=ifelse(dataset_obj$is_time_series, get_first_day(names(raw_batches)[i], dataset_obj$granularity), ((i-1)*dataset_obj$granularity)+1), 
+                                       date_end=ifelse(dataset_obj$is_time_series, get_last_day(names(raw_batches)[i], dataset_obj$granularity), i*dataset_obj$granularity), 
                                        data=raw_batches[[i]])))
   }
   names(batches)<-names(raw_batches)[dataset_obj$batches_to_group:length(raw_batches)]
@@ -235,13 +236,13 @@ get_first_batch<-function(raw_batches, dataset_obj){
                              ), 
               data=first_batch))
 }
-get_first_day<-function(date_as_string, date_format){
-  flag_year<-ifelse(date_format=="%Y", TRUE, FALSE)
+get_first_day<-function(date_as_string, granularity){
+  flag_year<-ifelse(granularity=="year", TRUE, FALSE)
   new_date<-as.Date(paste0(date_as_string, ifelse(flag_year,"/01/01","/01")))
   return(format(new_date, ifelse(flag_year,"%Y/%m","%Y/%m/%d")))
 }
-get_last_day<-function(date_as_string, date_format){
-  flag_year<-ifelse(date_format=="%Y", TRUE, FALSE)
+get_last_day<-function(date_as_string, granularity){
+  flag_year<-ifelse(granularity=="year", TRUE, FALSE)
   first_day<-as.Date(paste0(date_as_string, ifelse(flag_year,"/01/01","/01")))
   new_date<-ceiling_date(first_day, "month")-1
   return(format(new_date, ifelse(flag_year,"%Y/%m", "%Y/%m/%d")))
