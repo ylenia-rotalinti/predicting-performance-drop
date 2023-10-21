@@ -256,9 +256,21 @@ get_batch_name<-function(raw_batches,i){
 # SPLIT BATCHES IN SOURCE and TARGET (TRAINING,TEST)
 ##########
 
+# Perform the 70% - 30% split 
+# Also, ensuring that there are no overlapping rows between the training and test data sets and duplicate rows are considered
 split_batch<-function(batch_data){
-  training <- sample_frac(batch_data, 0.7)
-  test<-setdiff(batch_data,training) 
+  # Set the seed for reproducibility (optional)
+  set.seed(123)
+  
+  # Shuffle the rows in batch_data
+  shuffled_data <- batch_data[sample(nrow(batch_data)), ]
+  
+  # Determine the split point
+  split_point <- round(0.7 * nrow(shuffled_data))
+  
+  # Split the data into training and test sets
+  training <- shuffled_data[1:split_point, ]
+  test <- shuffled_data[(split_point + 1):nrow(shuffled_data), ]
   
   return(list(training=training,
               test=test))
