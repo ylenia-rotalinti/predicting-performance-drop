@@ -212,7 +212,7 @@ get_raw_batches<-function(dataset_obj){
   #exclude the date column 
   if(dataset_obj$is_time_series){
     return(split(
-      data[,!(names(data) %in% c(dateColumnLabel))],
+      data[,!(names(data) %in% c(date_column_label))],
       format(data[date_column_label], date_format)
     ))
   }
