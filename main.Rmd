@@ -19,7 +19,7 @@ source("functions.R")
 
 ```{r cars}
 # Dataset initialisation
-Dataset<-initialise_dataset("COVID-SYN") #"Gradual_W10K"
+Dataset<-initialise_dataset("Gradual_W10K") #"COVID-SYN"
 
 # Train regression models
 training <-compute_performance_shifts(Dataset, "training")
