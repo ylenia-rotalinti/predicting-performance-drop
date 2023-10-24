@@ -60,5 +60,7 @@ errors<-compute_errors(test, drift_metrics)
 print_output(errors)
 ```
 
-
-
+```{r}
+# Convert the errors to a CSV file and save it
+write.csv(print_output(errors), file = "ERRORS.csv", row.names = FALSE)
+```

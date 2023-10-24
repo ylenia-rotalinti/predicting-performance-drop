@@ -209,9 +209,10 @@ get_raw_batches<-function(dataset_obj){
   date_column_label<-dataset_obj$date_column_label
   date_format<-dataset_obj$date_format
   
+  #exclude the date column 
   if(dataset_obj$is_time_series){
     return(split(
-      data, #[,!(names(data) %in% c(dateColumnLabel))],
+      data[,!(names(data) %in% c(dateColumnLabel))],
       format(data[date_column_label], date_format)
     ))
   }
@@ -319,7 +320,7 @@ compute_model_performance <- function(fitted_model, new_data, class){
   
  return(confusionMatrix(data=predicted_class, 
                   reference=true_class,
-                  positive="1")$overall["Accuracy"])
+                  positive="1")$overall["Accuracy"])      #byClass["Recall"]   #overall["Accuracy"]
 }
 #@data_group: "test", "training"
 compute_performance_shifts<-function(dataset_obj, data_group){
@@ -349,17 +350,27 @@ compute_discrimination_error<-function(source, target, class_column_label){
   target[[class_column_label]]<-as.factor(0)
   
   #data sets balancing (both with the same amount of data)
-  if(nrow(source) > nrow(target)){
-    source<-sample_n(source, nrow(target))
-  } else {
-    target<-sample_n(target, nrow(source))
-  }
+  # if(nrow(source) > nrow(target)){
+  #   source<-sample_n(source, nrow(target))
+  # } else {
+  #   target<-sample_n(target, nrow(source))
+  # }
   
-   #to balance the data ans shuffle the order of the rows
-  union<-union_all(source,target) %>% sample_n(n(), replace = FALSE)
+   #to balance the data
+  union<-union_all(source,target) 
   
-  training<-sample_frac(union, 0.7)
-  test<-setdiff(union,training)
+  # Set the seed for reproducibility (optional)
+  # set.seed(123)
+  
+  # Shuffle the rows 
+  shuffled_data <- union[sample(nrow(union)), ]
+  
+  # Determine the split point
+  split_point <- round(0.7 * nrow(shuffled_data))
+  
+  # Split the data into training and test sets
+  training <- shuffled_data[1:split_point, ]
+  test <- shuffled_data[(split_point + 1):nrow(shuffled_data), ]
   
   model<-train_model(training, class_column_label)
   error <- 1 - compute_model_performance(model, test, class_column_label)
@@ -429,7 +440,7 @@ compute_mean_performance_shift<-function(training_obj){
 # PLOT REGRESSION MODEL
 ##########
 plot_regression_model<-function(training_obj, metric){
-  print(
+  my_plot<- 
     ggplot(training_obj, aes(x=.data[[metric]], y=performance_shift)) + 
     theme(axis.title.x = element_text(size=10),
           axis.title.y = element_text(size=10))+
@@ -442,7 +453,10 @@ plot_regression_model<-function(training_obj, metric){
     labs(#title = ~ bold("Regression model"),
          #subtitle = paste("Metric:", get_metric_name(metric)), 
          x=get_metric_name(metric), 
-         y="accuracy shift"))
+         y="Accuracy shift")
+  print(my_plot)
+  ggsave(paste0(metric,"_regressionModel.png"), 
+         plot = my_plot, width = 6, height = 4, dpi = 300)
 }
 
 ##########
@@ -455,15 +469,18 @@ train_linear_regression<-function(training_obj, metric){
     "avr_prob_score" = return(lm(performance_shift ~ avr_prob_score, data = training_obj))
   )
 }
+
 predict_performance_shift<-function(training_obj, test_obj, metric){
   model <- train_linear_regression(training_obj, metric)
+  
   new_data<-data.frame(test_obj[[metric]])
   names(new_data)<-metric
-  
+
   perf_shift_pred<-data.frame(predict(model, new_data))
   names(perf_shift_pred)<-paste0("perf_shift_pred_", metric)
   return(perf_shift_pred)
 }
+
 append_performance_shifts_pred<-function(training_obj, test_obj, metrics){
   performance_shifts_pred<-test_obj
   for(metric in metrics){
@@ -495,9 +512,20 @@ plot_drift_detection <-function(training_or_test_obj, metrics, option){
       geom_point(colour=colors[i], size=1.8)+
       theme_bw()+
       ylab(plot_names[i])
+    # Conditionally rotate x-axis labels 
+    if(Dataset$is_time_series){
+      plot <- plot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
+      }
     plot_list<-append(plot_list, list(plot))
   }
-  return(grid.arrange(grobs=plot_list))
+  combined_plot <- grid.arrange(grobs = plot_list, gtable_show = FALSE)
+  
+  # Save the plot as an image
+  ggsave(paste0(option, "_test.png"), 
+         plot = combined_plot, width = 6, height = 4, dpi = 300)
+  
+  # Display the plot in the R session
+  print(combined_plot)
 } 
 
 
