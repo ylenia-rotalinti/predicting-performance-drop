@@ -156,9 +156,11 @@ set_parameters<-function(dataset_label){
       granularity <- "month"          #batch window (day/month/year)
       date_format <- "%Y/%m"           #format of the time column (%Y , %Y-%m)
       date_column_label <- "covid_dt"   #meaningful columns
-      class_column_label <- "Death"
+      class_column_label <-"Death"     #c("Death", "HeartFailure")
       batches_to_group <-4          #how many batches to group (in the first placee)
       is_time_series <- TRUE         #is a evaluation dataset i.e. simulated
+      model_trained <- "random_forest"   #c("random_forest", "logistic_regression")
+      performance_metric <- "accuracy"   #c("accuracy", "recall")
   } else if(dataset_label=="CVD"){
       granularity <- "year"
       date_format <- "%Y"
@@ -166,6 +168,8 @@ set_parameters<-function(dataset_label){
       class_column_label <- "death" 
       batches_to_group <-2
       is_time_series <- TRUE
+      model_trained <- "random_forest"
+      performance_metric <- "accuracy"
   } else{
       granularity <- 5000
       date_format <- NaN
@@ -173,6 +177,8 @@ set_parameters<-function(dataset_label){
       class_column_label <- "class"
       batches_to_group <-1
       is_time_series <- FALSE
+      model_trained <- "random_forest"
+      performance_metric <- "accuracy"
   }
   return(list(name=dataset_label,
               granularity=granularity, 
@@ -180,7 +186,9 @@ set_parameters<-function(dataset_label){
               date_column_label=date_column_label, 
               class_column_label=class_column_label, 
               batches_to_group=batches_to_group,
-              is_time_series=is_time_series)
+              is_time_series=is_time_series,
+              model_trained=model_trained,
+              performance_metric=performance_metric)
   )
 }
 
@@ -309,29 +317,51 @@ initialise_dataset<-function(dataset_label){
 ##########
 # TRAIN MODEL AND EVALUATE PERFORMANCE
 ##########
-train_model<-function(training_data, class){
-  model <- randomForest(as.formula(paste(class, "~.")),
-                                   data = training_data)
-  return(model)
+train_model<-function(training_data, class, model){
+  fitted_model <- switch (model,
+    "random_forest" = {fitted_model <- randomForest(as.formula(paste(class, "~.")), data = training_data)},
+    "logistic_regression" = {fitted_model <-  glm(as.formula(paste(class, "~.")), data = training_data, family = binomial(link = "logit"))},
+    {
+      stop("MODEL NOT IMPLEMENTED!")
+    }
+  )
+  return(fitted_model)
 }
-compute_model_performance <- function(fitted_model, new_data, class){
-  predicted_class<-as.factor(predict(fitted_model, new_data))
+compute_model_performance <- function(fitted_model, new_data, class, performance_metric){
+  predicted_class<- predict(fitted_model, new_data)
+  if("glm" %in% class(fitted_model)){
+    predicted_class<-ifelse(predicted_class >= 0.5, 1, 0)
+  }
+  predicted_class<-as.factor(predicted_class)
   true_class<-new_data[[class]] 
   
- return(confusionMatrix(data=predicted_class, 
-                  reference=true_class,
-                  positive="1")$overall["Accuracy"])      #byClass["Recall"]   #overall["Accuracy"]
+  switch (performance_metric,
+    "accuracy" = {
+      return(confusionMatrix(data=predicted_class, 
+                             reference=true_class,
+                             positive="1")$overall["Accuracy"])
+    },
+    "recall" = {
+      return(confusionMatrix(data=predicted_class, 
+                             reference=true_class,
+                             positive="1")$byClass["Recall"])
+    },
+    {
+      stop("PERFORMANCE METRIC NOT FOUND!")
+    }
+  )
 }
 #@data_group: "test", "training"
 compute_performance_shifts<-function(dataset_obj, data_group){
   source<-dataset_obj$source
-  model<-train_model(source, dataset_obj$class_column_label)
+  model<-train_model(source, dataset_obj$class_column_label, dataset_obj$model_trained)
   performance<-c()
   for(i in 1:length(dataset_obj[[data_group]])){
     performance<-c(performance, 
                    compute_model_performance(model,
                                              dataset_obj[[data_group]][[i]],
-                                             dataset_obj$class_column_label))
+                                             dataset_obj$class_column_label,
+                                             dataset_obj$performance_metric))
   }
   performance_shift<-c(0, diff(performance))
   return(data.frame(batch=names(dataset_obj[[data_group]]),
@@ -372,8 +402,8 @@ compute_discrimination_error<-function(source, target, class_column_label){
   training <- shuffled_data[1:split_point, ]
   test <- shuffled_data[(split_point + 1):nrow(shuffled_data), ]
   
-  model<-train_model(training, class_column_label)
-  error <- 1 - compute_model_performance(model, test, class_column_label)
+  model<-train_model(training, class_column_label, "random_forest")
+  error <- 1 - compute_model_performance(model, test, class_column_label, "accuracy")
   
   return(error)
 }
@@ -406,7 +436,7 @@ compute_avr_score<-function(fitted_model, batch_data){
 }
 compute_avr_scores<-function(dataset_obj, data_group){
   source<-dataset_obj$source
-  model<-train_model(source, dataset_obj$class_column_label)
+  model<-train_model(source, dataset_obj$class_column_label, "random_forest")
   scores<-c()
   for(i in 1:length(dataset_obj[[data_group]])){
     scores<-c(scores, compute_avr_score(model,
