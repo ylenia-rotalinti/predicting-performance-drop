@@ -160,7 +160,7 @@ set_parameters<-function(dataset_label){
       batches_to_group <-4          #how many batches to group (in the first placee)
       is_time_series <- TRUE         #is a evaluation dataset i.e. simulated
       model_trained <- "random_forest"   #c("random_forest", "logistic_regression")
-      performance_metric <- "accuracy"   #c("accuracy", "recall")
+      performance_metric <- "recall"   #c("accuracy", "recall")
   } else if(dataset_label=="CVD"){
       granularity <- "year"
       date_format <- "%Y"
