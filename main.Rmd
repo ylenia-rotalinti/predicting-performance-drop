@@ -21,6 +21,10 @@ source("functions.R")
 # Dataset initialisation
 Dataset<-initialise_dataset("COVID-SYN")   #c("COVID-SYN","Gradual_W10K")
 
+# Chose model and performance metric
+Dataset$model_trained <- "random_forest"   #c("random_forest", "logistic_regression")
+Dataset$performance_metric <- "accuracy"   #c("accuracy", "recall")
+
 # Train regression models
 training <-compute_performance_shifts(Dataset, "training")
 training<-append_drift_detection_metrics(Dataset, "training", training)

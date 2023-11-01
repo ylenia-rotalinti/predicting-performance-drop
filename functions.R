@@ -198,7 +198,7 @@ set_parameters<-function(dataset_label){
       date_column_label <- "covid_dt"   #meaningful columns
       class_column_label <-"Death"     #c("Death", "HeartFailure")
       is_unbalanced <- TRUE
-      batches_to_group <-4          #how many batches to group (in the first placee)
+      batches_to_group <-5          #how many batches to group (in the first placee)
       is_time_series <- TRUE         #is a evaluation dataset i.e. simulated
       model_trained <- "random_forest"   #c("random_forest", "logistic_regression")
       performance_metric <- "recall"   #c("accuracy", "recall")
@@ -318,7 +318,7 @@ get_batch_name<-function(raw_batches,i){
 # Also, ensuring that there are no overlapping rows between the training and test data sets and duplicate rows are considered
 split_batch<-function(batch_data){
   # Set the seed for reproducibility (optional)
-  set.seed(123)
+  # set.seed(123)
   
   # Shuffle the rows in batch_data
   shuffled_data <- batch_data[sample(nrow(batch_data)), ]
