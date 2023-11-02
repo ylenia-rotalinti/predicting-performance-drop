@@ -586,15 +586,14 @@ plot_drift_detection <-function(training_or_test_obj, metrics, option){
   ) 
   for(i in 1:length(plot_obj)){
     plot<- ggplot(training_or_test_obj, 
-                  aes(x = batch, y = .data[[plot_obj[i]]], group=1)) + 
+                  aes(x = factor(batch, levels = unique(batch)), y = .data[[plot_obj[i]]], group=1)) + 
       geom_line(colour=colors[i], size=0.6)+
       geom_point(colour=colors[i], size=1.8)+
       theme_bw()+
-      ylab(plot_names[i])
-    # Conditionally rotate x-axis labels 
-    if(Dataset$is_time_series){
-      plot <- plot + theme(axis.text.x = element_text(angle = 90, hjust = 1))
-      }
+      ylab(plot_names[i])+
+      xlab("batches")+
+      theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    
     plot_list<-append(plot_list, list(plot))
   }
   combined_plot <- grid.arrange(grobs = plot_list, gtable_show = FALSE)
