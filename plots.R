@@ -42,3 +42,24 @@ ggplot(training,
   geom_point(colour="forestgreen", size=1.8)+
   theme_bw()+
   ylab("average score")
+
+# plot #instances per class per months
+# df <- parse_COVID_data("SYN")
+# # Create a new column for month
+# df <- df %>%
+#   mutate(month = format(covid_dt, "%Y-%m"))
+# 
+# # Group and summarize the data based on the "Death" variable
+# df_counts <- df %>%
+#   group_by(month, Death) %>%
+#   summarize(count = n()) %>%
+#   ungroup()
+# 
+# # Create a bar plot using ggplot2
+# ggplot(df_counts, aes(x = month, y = count, fill = Death)) +
+#   geom_bar(stat = "identity") +
+#   labs(title = "Count of Death by Month",
+#        x = "Month",
+#        y = "Count") +
+#   theme_minimal() +
+#   theme(axis.text.x = element_text(angle = 90, hjust = 1))
