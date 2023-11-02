@@ -113,6 +113,9 @@ parse_synthetic_data <- function(dataset_label) {
     "Gradual_W20K" = {
       filepath <- "Data/gradualW20K_dataset_orig.arff"
     },
+    "Gradual3DRIFTS_W5K" = {
+      filepath <- "Data/gradualW5K_3drifts_dataset.arff"
+    },
   )
   
   df <- read.csv(filepath, header = FALSE, comment.char = "@")
