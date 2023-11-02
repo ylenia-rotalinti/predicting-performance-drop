@@ -1,8 +1,45 @@
 ##FUNCTIONS
 
+####
+# PREPROCESSING
+####
+
+undersampling <- function(dataset, class_column_label) {
+  #index used for ordering (will be removed)
+  dataset$index <- 1:nrow(dataset)
+  
+  # Specify the target class you want to undersample
+  target_class <- ifelse(sum(dataset[[class_column_label]]==0) > sum(dataset[[class_column_label]]==1), 0, 1)
+  
+  # Find the indices of samples in the target/non target class
+  target_indices <- which(dataset[[class_column_label]] == target_class)
+  non_target_indices <- which(dataset[[class_column_label]] != target_class)
+  
+  # Calculate the number of samples in the majority/minority class
+  num_majority_samples <- sum(dataset[[class_column_label]] == target_class)
+  num_minority_samples <- sum(dataset[[class_column_label]] != target_class)
+  
+  # Calculate the number of samples to keep in the majority class
+  num_samples_to_keep <- num_minority_samples
+  
+  # Randomly select the same number of samples from the majority class
+  selected_indices <- sample(target_indices, size = num_samples_to_keep, replace = FALSE)
+  
+  # Combine the selected indices with the minority class indices
+  undersampled_indices <- c(selected_indices, non_target_indices)
+  
+  # Sort the shuffled data by row indices to restore the original order
+  undersampled_data <- dataset[undersampled_indices, ]
+  undersampled_data_ordered <- undersampled_data[order(undersampled_data$index), ]
+  
+  return(subset(undersampled_data_ordered, select = -index))
+}
+
+
 #########
 # READ DATA
 #########
+
 parse_COVID_data <- function(origin) {
   switch (origin,
           "SYN" = {
@@ -160,15 +197,17 @@ set_parameters<-function(dataset_label){
       date_format <- "%Y/%m"           #format of the time column (%Y , %Y-%m)
       date_column_label <- "covid_dt"   #meaningful columns
       class_column_label <-"Death"     #c("Death", "HeartFailure")
-      batches_to_group <-4          #how many batches to group (in the first placee)
+      is_unbalanced <- TRUE
+      batches_to_group <-5          #how many batches to group (in the first placee)
       is_time_series <- TRUE         #is a evaluation dataset i.e. simulated
       model_trained <- "random_forest"   #c("random_forest", "logistic_regression")
-      performance_metric <- "recall"   #c("accuracy", "recall")
+      performance_metric <- "accuracy"   #c("accuracy", "recall")
   } else if(dataset_label=="CVD"){
       granularity <- "year"
       date_format <- "%Y"
       date_column_label <- "Diagnosis.Date"
-      class_column_label <- "death" 
+      class_column_label <- "death"
+      is_unbalanced <- TRUE
       batches_to_group <-2
       is_time_series <- TRUE
       model_trained <- "random_forest"
@@ -178,6 +217,7 @@ set_parameters<-function(dataset_label){
       date_format <- NaN
       date_column_label <- NaN
       class_column_label <- "class"
+      is_unbalanced <- FALSE
       batches_to_group <-1
       is_time_series <- FALSE
       model_trained <- "random_forest"
@@ -188,6 +228,7 @@ set_parameters<-function(dataset_label){
               date_format=date_format, 
               date_column_label=date_column_label, 
               class_column_label=class_column_label, 
+              is_unbalanced=is_unbalanced,
               batches_to_group=batches_to_group,
               is_time_series=is_time_series,
               model_trained=model_trained,
@@ -219,6 +260,11 @@ get_raw_batches<-function(dataset_obj){
   granularity<-dataset_obj$granularity
   date_column_label<-dataset_obj$date_column_label
   date_format<-dataset_obj$date_format
+  
+  #if the data is unbalanced, undersample without replacement the majority class
+  if(dataset_obj$is_unbalanced){
+    data<-undersampling(data, dataset_obj$class_column_label)  
+  }
   
   #exclude the date column 
   if(dataset_obj$is_time_series){
@@ -272,7 +318,7 @@ get_batch_name<-function(raw_batches,i){
 # Also, ensuring that there are no overlapping rows between the training and test data sets and duplicate rows are considered
 split_batch<-function(batch_data){
   # Set the seed for reproducibility (optional)
-  set.seed(123)
+  # set.seed(123)
   
   # Shuffle the rows in batch_data
   shuffled_data <- batch_data[sample(nrow(batch_data)), ]
