@@ -19,7 +19,7 @@ source("functions.R")
 
 ```{r cars}
 # Dataset initialisation
-Dataset<-initialise_dataset("COVID-SYN")   #c("COVID-SYN","Gradual_W10K")
+Dataset<-initialise_dataset("Gradual_W10K")   #c("COVID-SYN","Gradual_W10K")
 
 # Chose model and performance metric
 Dataset$model_trained <- "random_forest"   #c("random_forest", "logistic_regression")

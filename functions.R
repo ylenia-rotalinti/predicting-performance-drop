@@ -28,9 +28,6 @@ undersampling <- function(dataset, class_column_label) {
   # Combine the selected indices with the minority class indices
   undersampled_indices <- c(selected_indices, non_target_indices)
   
-  # Check the row indices of the shuffled data
-  #shuffled_indices <- rownames(dataset[undersampled_indices, ])
-  
   # Sort the shuffled data by row indices to restore the original order
   undersampled_data <- dataset[undersampled_indices, ]
   undersampled_data_ordered <- undersampled_data[order(undersampled_data$index), ]
@@ -201,7 +198,7 @@ set_parameters<-function(dataset_label){
       batches_to_group <-5          #how many batches to group (in the first placee)
       is_time_series <- TRUE         #is a evaluation dataset i.e. simulated
       model_trained <- "random_forest"   #c("random_forest", "logistic_regression")
-      performance_metric <- "recall"   #c("accuracy", "recall")
+      performance_metric <- "accuracy"   #c("accuracy", "recall")
   } else if(dataset_label=="CVD"){
       granularity <- "year"
       date_format <- "%Y"
