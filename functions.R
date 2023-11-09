@@ -589,6 +589,9 @@ plot_drift_detection <-function(training_or_test_obj, metrics, option){
                   aes(x = factor(batch, levels = unique(batch)), y = .data[[plot_obj[i]]], group=1)) + 
       geom_line(colour=colors[i], size=0.6)+
       geom_point(colour=colors[i], size=1.8)+
+      #geom_vline(xintercept=5, color="red",linetype="longdash")+
+      #geom_vline(xintercept=10, color="red", linetype="longdash")+
+      #geom_vline(xintercept=15, color="red", linetype="longdash")+
       theme_bw()+
       ylab(plot_names[i])+
       xlab("batches")+
