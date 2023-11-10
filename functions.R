@@ -580,16 +580,16 @@ plot_drift_detection <-function(training_or_test_obj, metrics, option){
          metrics = {plot_obj <- c("performance", "performance_shift", metrics)
                     plot_names <- c("performance", "performance shift", "discrimination error", "avr score")
                     colors <- c("dodgerblue","dodgerblue","firebrick", "forestgreen")},
-         drop_prediction ={plot_obj <- c("performance_shift", paste0("perf_shift_pred_", metrics))
-                  plot_names<- c("true shift", "DE pred", "APS pred")
-                  colors <- c("blue3", "firebrick", "forestgreen")}
+         drop_prediction ={plot_obj <- c("performance", "performance_shift", paste0("perf_shift_pred_", metrics))
+                  plot_names<- c("accuracy", "accuracy shift", "shift prediction (DE)", "shift prediction (AVS)")
+                  colors <- c("dodgerblue", "dodgerblue", "firebrick", "forestgreen")}
   ) 
   for(i in 1:length(plot_obj)){
     plot<- ggplot(training_or_test_obj, 
                   aes(x = factor(batch, levels = unique(batch)), y = .data[[plot_obj[i]]], group=1)) + 
-      geom_line(colour=colors[i], size=0.6)+
+      geom_line(colour=colors[i], linewidth=0.6)+
       geom_point(colour=colors[i], size=1.8)+
-      #geom_vline(xintercept=5, color="red",linetype="longdash")+
+      geom_vline(xintercept=5, color="red",linetype="longdash")+
       #geom_vline(xintercept=10, color="red", linetype="longdash")+
       #geom_vline(xintercept=15, color="red", linetype="longdash")+
       theme_bw()+
